@@ -33,10 +33,6 @@ const (
 	pubKeyPath  = "keys/app.rsa.pub" // openssl rsa -in app.rsa -pubout > app.rsa.pub
 )
 
-// keys are held in global variables
-// i havn't seen a memory corruption/info leakage in go yet
-// but maybe it's a better idea, just to store the public key in ram?
-// and load the signKey on every signing request? depends on  your usage i guess
 var (
 	verifyKey, signKey []byte
 	userDB, fileDB     *mgo.Collection
@@ -59,7 +55,7 @@ func init() {
 	}
 }
 
-// just some html, to lazy for http.FileServer()
+// just some html, too lazy for http.FileServer()
 const (
 	tokenName = "AccessToken"
 
@@ -68,6 +64,16 @@ const (
 <a href="/restricted">fun area</a>
 
 <form action="/authenticate" method="POST">
+  <input type="text" name="user">
+  <input type="password" name="pass">
+  <input type="submit">
+</form>`
+
+	createUserHTML = `<h2>Welcome to the Test Sign up</h2>
+
+<a href="/restricted">fun area</a>
+
+<form action="/createUser" method="POST">
   <input type="text" name="user">
   <input type="password" name="pass">
   <input type="submit">
@@ -84,8 +90,47 @@ func landingHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, landingHtml)
 }
 
+// serves user creation page
+func createHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, createUserHTML)
+		return
+	}
+
+	username := r.FormValue("user")
+	pass := r.FormValue("pass")
+	user := User{}
+	err := userDB.Find(bson.M{"username": username}).One(&user)
+
+	if user.UserName == username {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "User already exists")
+		return
+	}
+
+	if len(pass) < 8 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Password must contain at least 8 characters")
+		return
+	}
+
+	hash, _ := bcrypt.GenerateFromPassword([]byte(pass), 10)
+	user.UserName = username
+	user.Hash = hash
+	err = userDB.Insert(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Error creating user.")
+		return
+	}
+
+	loginHandler(w, r)
+}
+
 // reads the form values, checks them and creates the token
-func authHandler(w http.ResponseWriter, r *http.Request) {
+func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// make sure its post
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -113,16 +158,15 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	// create a signer for rsa 256
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 
-	// set our claims
-	t.Claims["AccessToken"] = "level1"
-	t.Claims["CustomUserInfo"] = struct {
-		Name string
-		Kind string
-	}{username, "human"}
+	// TODO include user id in cookie
+	// t.Claims["AccessToken"] = "level1"
+	// t.Claims["CustomUserInfo"] = struct {
+	// 	Name string
+	// 	Kind string
+	// }{username, "human"}
 
 	// set the expire time
-	// see http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-20#section-4.1.4
-	t.Claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
+	t.Claims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -131,8 +175,6 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// i know using cookies to store the token isn't really helpfull for cross domain api usage
-	// but it's just an example and i did not want to involve javascript
 	http.SetCookie(w, &http.Cookie{
 		Name:       tokenName,
 		Value:      tokenString,
@@ -148,10 +190,10 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 // only accessible with a valid token
 func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		authHandler(w, r)
+		loginHandler(w, r)
 		return
 	}
-	// check if we have a cookie with out tokenName
+	// check if we have a cookie with our tokenName
 	tokenCookie, err := r.Cookie(tokenName)
 	switch {
 	case err == http.ErrNoCookie:
@@ -174,8 +216,6 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 	// validate the token
 	token, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
-		// since we only use the one private key to sign the tokens,
-		// we also only use its public counter part to verify
 		return verifyKey, nil
 	})
 
@@ -186,7 +226,7 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 		if !token.Valid { // but may still be invalid
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "WHAT? Invalid Token? F*** off!")
+			fmt.Fprintln(w, "Invalid Token.")
 			return
 		}
 
@@ -201,8 +241,6 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch vErr.Errors {
 		case jwt.ValidationErrorExpired:
-			// w.WriteHeader(http.StatusUnauthorized)
-			// fmt.Fprintln(w, "Token Expired, get a new one.")
 			landingHandler(w, r)
 			return
 
@@ -234,22 +272,20 @@ func main() {
 	// log.Println("Listening...")
 	// http.ListenAndServe(":3000", nil)
 
-	// http.HandleFunc("/", landingHandler)
-	// http.HandleFunc("/authenticate", authHandler)
+	http.HandleFunc("/createUser", createHandler)
+	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/", restrictedHandler)
+
 	session, err := mgo.Dial("localhost")
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
+	session.SetSafe(&mgo.Safe{})
 
 	userDB = session.DB("Theseus").C("users")
 	fileDB = session.DB("Theseus").C("files")
 
-	// hash, _ := bcrypt.GenerateFromPassword([]byte("test"), 10)
-	// testUser := User{"test", hash}
-	// userDB.Insert(&testUser)
-
-	log.Println("Listening...")
+	log.Println("Listening on port 8080...")
 	http.ListenAndServe(":8080", nil)
 }
