@@ -69,10 +69,16 @@ Dispatcher.prototype.fileWrite = function(appID, fileName, data) {
  * Updates Canvas element associated with an app
  * @param {String} appID - internal reference to an app
  * @param {String} method - method or property on canvas to run / set
- * @param {Array}  data - Arguments for function or data for property
+ * @param {Array || ALL}  data - Arguments for function or data for property
  */
 Dispatcher.prototype.canvasUpdate = function(appID, method, data) {
-  
+  if (typeof this.runningApps[appID].canvas[method] === 'function') {
+    this.runningApps[appID].canvas[method].apply(null, data);
+  } else if (this.runningApps[appID].canvas.hasOwnProperty(method)) {
+    this.runningApps[appID].canvas[method] = data;
+  } else {
+    this.sendMessage(appID, {err: method + 'is not a valid Canvas property.'});
+  }
 };
 
 /**
