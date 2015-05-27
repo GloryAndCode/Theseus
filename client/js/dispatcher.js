@@ -20,7 +20,21 @@ var Dispatcher = function(fileSystem, view) {
  * @param {String} script - uri for application script
  */
 Dispatcher.prototype.initApp = function(script) {
+  var appID = /\/(\w*)\.html/.exec(script)[1];
+  this.runningApps[appID] = {
+    name: appID,
+    worker: new Worker(script),
+    canvas: this.view.generateScreen()
+  };
   
+  this.runningApps[appID].worker.onmessage = function(e) {
+    var cmd = e.data;
+    var validCommands = ['fileRequest', 'fileWrite', 'canvasUpdate', 'closeApp'];
+
+    if (validCommands.indexOf(cmd.command) !== -1) {
+      this[cmd.command].apply(this, [appID].concat(cmd.args));
+    }
+  };
 };
 
 /**
