@@ -86,5 +86,8 @@ Dispatcher.prototype.canvasUpdate = function(appID, method, data) {
  * @param {String} appID - internal reference to an app
  */
 Dispatcher.prototype.closeApp = function(appID) {
-  
+  var app = this.runningApps[appID];
+  app.worker.terminate();
+  this.view.destroyScreen(app.canvas);
+  delete this.runningApps[appID];
 };
