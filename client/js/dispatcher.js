@@ -52,7 +52,6 @@ Dispatcher.prototype.sendMessage = function(appID, data) {
  * @param {String} fileName - full path to the file
  */
 Dispatcher.prototype.fileRequest = function(appID, fileName) {
-  var self = this;
   this.fileSystem.readFile(appID, filename).then(this.sendMessage.bind(this, appID));
 };
 
