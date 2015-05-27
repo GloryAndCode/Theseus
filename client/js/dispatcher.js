@@ -9,8 +9,10 @@
  * @param {View} view - instance of View for dispatcher to use
  * @return {Dispatcher} returns initialized Dispatcher instance
  */
-var Dispatcher = function() {
+var Dispatcher = function(fileSystem, view) {
   this.runningApps = {};
+  this.fileSystem = fileSystem;
+  this.view = view;
 };
 
 /**
