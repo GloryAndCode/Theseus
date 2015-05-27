@@ -52,7 +52,7 @@ Dispatcher.prototype.sendMessage = function(appID, data) {
  * @param {String} fileName - full path to the file
  */
 Dispatcher.prototype.fileRequest = function(appID, fileName) {
-  this.fileSystem.readFile(appID, filename).then(this.sendMessage.bind(this, appID));
+  this.fileSystem.readFile(appID, fileName).then(this.sendMessage.bind(this, appID));
 };
 
 /**
@@ -62,7 +62,7 @@ Dispatcher.prototype.fileRequest = function(appID, fileName) {
  * @param {Object} data - data to write to file
  */
 Dispatcher.prototype.fileWrite = function(appID, fileName, data) {
-  
+  this.fileSystem.writeFile(appID, fileName, data).then(this.sendMessage.bind(this, appID));
 };
 
 /**
