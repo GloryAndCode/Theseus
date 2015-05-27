@@ -158,12 +158,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// create a signer for rsa 256
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 
-	// TODO include user id in cookie
-	// t.Claims["AccessToken"] = "level1"
-	// t.Claims["CustomUserInfo"] = struct {
-	// 	Name string
-	// 	Kind string
-	// }{username, "human"}
+	// include username in cookie
+	t.Claims["username"] = username
 
 	// set the expire time
 	t.Claims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
