@@ -38,15 +38,22 @@ Dispatcher.prototype.initApp = function(script) {
 };
 
 /**
+ * helper function to send data into a specific web worker
+ * @param {String} appID - internal reference to an app
+ * @param {Object} data - data object to be passed into web worker
+ */
+Dispatcher.prototype.sendMessage = function(appID, data) {
+  this.runningApps[appID].worker.sendMessage(data);
+};
+
+/**
  * Handles fileSystem reads for apps
  * @param {String} appID - internal reference to an app
  * @param {String} fileName - full path to the file
  */
 Dispatcher.prototype.fileRequest = function(appID, fileName) {
   var self = this;
-  this.fileSystem.readFile(appID, filename).then(function(data) {
-    self.runningApps[appID].worker.sendMessage(data);
-  });
+  this.fileSystem.readFile(appID, filename).then(this.sendMessage.bind(this, appID));
 };
 
 /**
