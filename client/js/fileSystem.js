@@ -1,7 +1,7 @@
 /**
  * File System module for Theseus
  * This one interfaces with localStorage
- * @require Mithril.js#deferred
+ * @require Mithril.js
  */
 
 /**
@@ -35,17 +35,55 @@ FileSystem.prototype.forceCache = function(fileName) {
  * @return {Promise} deferred promise object
  */
 FileSystem.prototype.readFile = function(appID, fileName) {
-  
+  var deferred = m.deferred();
+
+  setTimeout(function() {
+    var file = localStorage.getItem(fileName);
+    if (file.appID === undefined) {
+      //check for file on server before we send this back
+
+      deferred.resolve({err: "This file does not exist."});
+    } else if (file.appID !== appID) {
+      deferred.resolve({err: "This app does not have permission to access this file."});
+    } else {
+      deferred.resolve(file);
+    }
+  }, 0);
+
+  return deferred.promise;
 };
 
 /**
  * Writes file to localStorage
  * @param {String} appID - name of script writing the file
  * @param {String} fileName - name of file to write
+ * @param {Data} data - any value that can be converted to JSON
  * @return {Promise} deferred promise object
  */
-FileSystem.prototype.writeFile = function(appID, fileName) {
-  
+FileSystem.prototype.writeFile = function(appID, fileName, data) {
+  var deferred = m.deferred();
+
+  setTimeout(function() {
+    var file = localStorage.getItem(fileName);
+    if (file.appID === undefined) {
+      localStorage.setItem(fileName, JSON.stringify({
+        appID: appID,
+        name: fileName,
+        updated: (new Date()).toJSON(),
+        data: data
+      }));
+      deferred.resolve(localStorage.getItem(fileName));
+    } else if (file.appID !== appID) {
+      deferred.resolve({err: "This app does not have permission to access the requested file."});
+    } else {
+      file.data = JSON.stringify(data);
+      file.updated = (new Date()).toJSON();
+      localStorage.setItem(fileName, JSON.stringify(file));
+      deferred.resolve(localStorage.getItem(fileName));
+    }
+  }, 0);
+
+  return deferred.promise;
 };
 
 /**
