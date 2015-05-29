@@ -102,6 +102,6 @@ Dispatcher.prototype.canvasUpdate = function(appID, ctx, commands) {
 Dispatcher.prototype.closeApp = function(appID) {
   var app = this.runningApps[appID];
   app.worker.terminate();
-  this.view.destroyScreen(app.canvas);
+  app.canvas.destroyScreen();
   delete this.runningApps[appID];
 };
