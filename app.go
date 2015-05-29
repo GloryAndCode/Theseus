@@ -28,6 +28,12 @@ type User struct {
 	Hash     []byte
 }
 
+type File struct {
+	FileName     string
+	Owner        string
+	FileContents string
+}
+
 const (
 	privKeyPath = "keys/app.rsa"     // openssl genrsa -out app.rsa keysize
 	pubKeyPath  = "keys/app.rsa.pub" // openssl rsa -in app.rsa -pubout > app.rsa.pub
@@ -256,6 +262,77 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func storeFileHandler(w http.ResponseWriter, r *http.Request) {
+	userName, authenticated := getAuth(r)
+	if !authenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "Not authenticated.")
+		return
+	}
+
+	var file File
+	file.FileName = r.FormValue("fileName")
+	file.Owner = userName
+	file.FileContents = r.FormValue("fileContents")
+
+	err := fileDB.Update(bson.M{"filename": file.FileName, "owner": file.Owner}, &file)
+	// if there wasn't a file to update, insert file into DB
+	if err != nil {
+		err = fileDB.Insert(&file)
+		if err != nil {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintln(w, "Error inserting into DB.")
+			return
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "Success!")
+	return
+}
+
+func getFileHandler(w http.ResponseWriter, r *http.Request) {
+	userName, authenticated := getAuth(r)
+	if !authenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "Not authenticated.")
+		return
+	}
+
+	var file File
+	fileDB.Find(bson.M{"filename": r.FormValue("fileName"), "owner": userName}).One(&file)
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, file.FileContents)
+	return
+}
+
+// returns username and boolean indicating if the token was valid
+func getAuth(r *http.Request) (string, bool) {
+	// check if we have a cookie with our tokenName
+	tokenCookie, err := r.Cookie(tokenName)
+
+	if err != nil {
+		return "", false
+	}
+
+	// validate the token
+	token, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
+		return verifyKey, nil
+	})
+
+	if err == nil && token.Valid {
+		str, ok := token.Claims["username"].(string)
+		if ok {
+			return str, true
+		} else {
+			log.Print("token.Claims[\"username\"] Not a string.")
+			return "", false
+		}
+
+	}
+
+	return "", false
+}
+
 func (s ApiHandler) ServeHTTP(
 	w http.ResponseWriter,
 	r *http.Request) {
@@ -271,6 +348,8 @@ func main() {
 	http.HandleFunc("/createUser", createHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/", restrictedHandler)
+	http.HandleFunc("/getFile", getFileHandler)
+	http.HandleFunc("/storeFile", storeFileHandler)
 
 	session, err := mgo.Dial("localhost")
 	if err != nil {
