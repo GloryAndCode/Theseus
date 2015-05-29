@@ -20,7 +20,7 @@ var Dispatcher = function(fileSystem, view) {
  * @param {String} script - uri for application script
  */
 Dispatcher.prototype.initApp = function(script) {
-  var appID = /\/(\w*)\.html/.exec(script)[1];
+  var appID = /\/(\w*)\.js/.exec(script)[1];
   this.runningApps[appID] = {
     name: appID,
     worker: new Worker(script),
