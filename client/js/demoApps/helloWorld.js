@@ -7,5 +7,10 @@ var updateCounter = function() {
   setTimeout(updateCounter, 1000);
 };
 
-postMessage({command: "canvasUpdate", args: ['2d', [['font', '30px Arial'], ['fillText', ['Hello World!', 10, 50]]]]});
+postMessage({command: "canvasUpdate", args: ['2d', [
+  ['fillStyle', 'white'],
+  ['fill', []]
+  ['font', '30px Arial'],
+  ['fillText', ['Hello World!', 10, 50]]
+]]});
 updateCounter();
