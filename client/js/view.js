@@ -210,10 +210,10 @@ View.prototype.addScreen = function(position, size) {
   this.screens.push(newScreen);
   this.scene.add(newScreen);
 
-  //Add a bit of rotation for now
-  this.animations.push(function() {
-  	newScreen.rotation.z += 0.01;
-  });
+  // //Add a bit of rotation for now
+  // this.animations.push(function() {
+  // 	newScreen.rotation.z += 0.01;
+  // });
   //newScreen.rotation.x = position.rx;
   newScreen.rotation.y = position.ry;
 
