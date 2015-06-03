@@ -9,7 +9,7 @@ var updateCounter = function() {
 
 postMessage({command: "canvasUpdate", args: ['2d', [
   ['fillStyle', 'white'],
-  ['fill', []]
+  ['fill', []],
   ['font', '30px Arial'],
   ['fillText', ['Hello World!', 10, 50]]
 ]]});
