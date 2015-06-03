@@ -6,10 +6,11 @@ var updateCounter = function() {
   setTimeout(updateCounter, 1000);
 };
 
-postMessage({command: 'canvasUpdate', args: ['2d', [
-  ['fillStyle', 'white'],
-  ['font', '30px Arial'],
-]]});
-
-updateCounter();
+setTimeout(function() {
+  postMessage({command: 'canvasUpdate', args: ['2d', [
+    ['fillStyle', 'white'],
+    ['font', '30px Arial'],
+  ]]});
+  updateCounter();
+}, 1000);
 
