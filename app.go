@@ -42,6 +42,7 @@ const (
 var (
 	verifyKey, signKey []byte
 	userDB, fileDB     *mgo.Collection
+	fs                 http.Handler
 )
 
 // read the key files before starting http handlers
@@ -189,79 +190,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, successHtml)
 }
 
-// only accessible with a valid token
-func restrictedHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		loginHandler(w, r)
-		return
-	}
-	// check if we have a cookie with our tokenName
-	tokenCookie, err := r.Cookie(tokenName)
-	switch {
-	case err == http.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "No Token, no fun!")
-		return
-	case err != nil:
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Error while Parsing cookie!")
-		log.Printf("Cookie parse error: %v\n", err)
-		return
-	}
-
-	// just for the lulz, check if it is empty.. should fail on Parse anyway..
-	if tokenCookie.Value == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "No Token, no fun!")
-		return
-	}
-
-	// validate the token
-	token, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
-		return verifyKey, nil
-	})
-
-	// branch out into the possible error from signing
-	switch err.(type) {
-
-	case nil: // no error
-
-		if !token.Valid { // but may still be invalid
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "Invalid Token.")
-			return
-		}
-
-		// see stdout and watch for the CustomUserInfo, nicely unmarshalled
-		log.Printf("Someone accessed resricted area! Token:%+v\n", token)
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, restrictedHtml)
-
-	case *jwt.ValidationError: // something was wrong during the validation
-		vErr := err.(*jwt.ValidationError)
-
-		switch vErr.Errors {
-		case jwt.ValidationErrorExpired:
-			landingHandler(w, r)
-			return
-
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, "Error while Parsing Token!")
-			log.Printf("ValidationError error: %+v\n", vErr.Errors)
-			return
-		}
-
-	default: // something else went wrong
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Error while Parsing Token!")
-		log.Printf("Token parse error: %v\n", err)
-		return
-	}
-
-}
-
 func storeFileHandler(w http.ResponseWriter, r *http.Request) {
 	userName, authenticated := getAuth(r)
 	if !authenticated {
@@ -305,6 +233,35 @@ func getFileHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func routeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/login" && r.URL.Path != "/" && r.URL.Path != "/createUser" && r.URL.Path != "/authenticate" {
+		_, validToken := getAuth(r)
+		if validToken {
+			switch r.URL.Path {
+			case "/getFile":
+				getFileHandler(w, r)
+			case "/storeFile":
+				storeFileHandler(w, r)
+			default:
+				fs.ServeHTTP(w, r)
+			}
+		} else {
+			landingHandler(w, r)
+		}
+	} else {
+		switch r.URL.Path {
+		case "/login":
+			loginHandler(w, r)
+		case "/":
+			landingHandler(w, r)
+		case "/createUser":
+			createHandler(w, r)
+		case "/authenticate":
+			loginHandler(w, r)
+		}
+	}
+}
+
 // returns username and boolean indicating if the token was valid
 func getAuth(r *http.Request) (string, bool) {
 	// check if we have a cookie with our tokenName
@@ -339,17 +296,9 @@ func (s ApiHandler) ServeHTTP(
 }
 
 func main() {
-	// fs := http.FileServer(http.Dir("client"))
-	// http.Handle("/", fs)
-	// go http.ListenAndServeTLS(":8443", "certFile", "keyFile", &ApiHandler{})
-	// log.Println("Listening...")
-	// http.ListenAndServe(":3000", nil)
+	fs = http.FileServer(http.Dir("client"))
 
-	http.HandleFunc("/createUser", createHandler)
-	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/", restrictedHandler)
-	http.HandleFunc("/getFile", getFileHandler)
-	http.HandleFunc("/storeFile", storeFileHandler)
+	http.HandleFunc("/", routeHandler)
 
 	session, err := mgo.Dial("localhost")
 	if err != nil {
@@ -362,5 +311,6 @@ func main() {
 	fileDB = session.DB("Theseus").C("files")
 
 	log.Println("Listening on port 8080...")
+	go http.ListenAndServeTLS(":8443", "/keys/cert.pem", "/keys/certprivate.pem", nil)
 	http.ListenAndServe(":8080", nil)
 }
