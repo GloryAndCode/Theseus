@@ -1,0 +1,23 @@
+{
+  "name": "Theseus",
+  "version": "1.0.0",
+  "description": "Virtual Reality Operating Environment",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha spec/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GloryAndCode/Theseus.git"
+  },
+  "author": "Cassandra Cruz <celkamada@gmail.com> (http://alicekamada.github.io)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GloryAndCode/Theseus/issues"
+  },
+  "homepage": "https://github.com/GloryAndCode/Theseus",
+  "dependencies": {
+    "chai": "^3.0.0",
+    "mocha": "^2.2.5"
+  }
+}
