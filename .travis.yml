@@ -1,0 +1,10 @@
+language: go
+
+before_script:
+  - go get
+  - npm install -g mocha
+  - npm install chai
+
+script:
+  - go test
+  - mocha spec/
