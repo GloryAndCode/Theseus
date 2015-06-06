@@ -26,13 +26,15 @@ Dispatcher.prototype.initApp = function(script) {
     worker: new Worker(script),
     canvas: this.view.generateScreen()
   };
-  
+
+  var self = this;
+
   this.runningApps[appID].worker.onmessage = function(e) {
     var cmd = e.data;
     var validCommands = ['fileRequest', 'fileWrite', 'canvasUpdate', 'closeApp'];
 
     if (validCommands.indexOf(cmd.command) !== -1) {
-      this[cmd.command].apply(this, [appID].concat(cmd.args));
+      self[cmd.command].apply(self, [appID].concat(cmd.args));
     }
   };
 };
@@ -43,7 +45,7 @@ Dispatcher.prototype.initApp = function(script) {
  * @param {Object} data - data object to be passed into web worker
  */
 Dispatcher.prototype.sendMessage = function(appID, data) {
-  this.runningApps[appID].worker.sendMessage(data);
+  this.runningApps[appID].worker.postMessage(data);
 };
 
 /**
@@ -75,6 +77,7 @@ Dispatcher.prototype.fileWrite = function(appID, fileName, data) {
  */
 Dispatcher.prototype.canvasUpdate = function(appID, ctx, commands) {
   var canvas = this.runningApps[appID].canvas;
+  var self = this;
   try {
     var context = canvas.contexts[ctx];
   } catch (e) {
@@ -83,14 +86,14 @@ Dispatcher.prototype.canvasUpdate = function(appID, ctx, commands) {
   if (context !== undefined) {
     commands.forEach(function(command) {
       if (typeof context[command[0]] === 'function') {
-       context[command[0]].apply(null, command[1]);
+       context[command[0]].apply(context, command[1]);
       } else if (context.hasOwnProperty(command[0])) {
         context[command[0]] = command[1];
       } else {
-        this.sendMessage(appID, {err: command[0] + 'is not a valid Canvas property.'});
+        self.sendMessage(appID, {err: command[0] + 'is not a valid Canvas property.'});
       }
     });
-  
+    debugger;
     canvas.updateTexture();
   }
 };

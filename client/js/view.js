@@ -13,6 +13,10 @@ View.prototype.init = function() {
   // Make an array to house the animation functions
   this.animations = [];
 
+  // Store the current screens
+  this.screensOn = {0 : false, 1 : false, 2 : false,
+                  3 : false, 4 : false, 5 : false};
+
   // Create the renderer
   this.renderer = new THREE.WebGLRenderer();
 
@@ -172,22 +176,33 @@ View.prototype.fullscreen = function() {
   }
 };
 
-// Method for creating a new virtual screen
-View.prototype.generateScreen = function() {
-  var position1 = {
-    x : 3,
-    y : 7.5,
-    z : 0
-  };
-  var rotation1 = 1.5 * Math.PI;
-  var size1 = {
-    width : 12,
-    height : 9
-  };
-  return this.addScreen(position1, rotation1, size1);
+View.prototype.getNextScreen = function() {
+  for (var number in this.screensOn) {
+    if (this.screensOn[number] === false) {
+      return number;
+    }
+  }
+  return null;
 };
 
-View.prototype.addScreen = function(position, rotation, size) {
+// Method for creating a new virtual screen
+View.prototype.generateScreen = function() {
+  positions = [{x : 9.5, y : 7.5, z : 0, ry : 1.5 * Math.PI, rx : 0},
+               {x : 5, y : 7.5, z : 10.5, ry : 1.25 * Math.PI, rx : 0},
+               {x : 5, y : 7.5, z : -10.5, ry : 0.75 * Math.PI, rx : 0},
+               {x : 9.5, y : 17, z : 0, ry : 1.5 * Math.PI, rx : 0.25 * Math.PI},
+               {x : 5, y : 17, z : 10.5, ry : 1.25 * Math.PI, rx : 0.25 * Math.PI},
+               {x : 5, y : 17, z : -10.5, ry : 0.75 * Math.PI, rx : 0.25 * Math.PI}];
+  var size = {width : 12,height : 9};
+  var screenNumber = this.getNextScreen();
+  if (screenNumber === null) {
+    console.log("Already 6 screens");
+    return null;
+  }
+  return this.addScreen(positions[screenNumber], size, screenNumber);
+};
+
+View.prototype.addScreen = function(position, size, screenNumber) {
   // Make a new canvas to generate the screen from
   var newCanvas = document.createElement('canvas');
   var screenTexture = new THREE.Texture(newCanvas);
@@ -209,19 +224,23 @@ View.prototype.addScreen = function(position, rotation, size) {
   newScreen.position.setZ(position.z);
   this.scene.add(newScreen);
 
-  // Add a bit of rotation for now
+  // //Add a bit of rotation for now
   // this.animations.push(function() {
-  // 	newScreen.rotation.y += 0.01;
+  // 	newScreen.rotation.z += 0.01;
   // });
-  newScreen.rotation.y = rotation;
+  //newScreen.rotation.x = position.rx;
+  newScreen.rotation.y = position.ry;
 
   // Add the screen, texture, and scene object as a param on the canvas
   newCanvas.texture = screenTexture;
   newCanvas.screen = newScreen;
   newCanvas.scene = this.scene;
+  newCanvas.screensOn = this.screensOn;
   newCanvas.contexts = {};
   newCanvas.contexts['2d'] = newCanvas.getContext('2d');
   newCanvas.contexts['3d'] = newCanvas.getContext('3d');
+  newCanvas.screenNumber = screenNumber;
+  this.screensOn[screenNumber] = true;
 
   // Make a function to update the texture when the
   // canvas is changed.
@@ -231,7 +250,8 @@ View.prototype.addScreen = function(position, rotation, size) {
 
   // Make a function to remove the screen from the scene
   newCanvas.destroyScreen = function() {
-  	this.scene.remove(this.screen);
+    this.scene.remove(this.screen);
+    this.screensOn[screenNumber] = false;
   };
 
   // Return the canvas
