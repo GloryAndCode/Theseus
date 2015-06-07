@@ -1,7 +1,3 @@
-// Require statements for view and fileSystem goes here
-//var fs = require('./fileSystem.js');
-//var view = require('./view.js');
-
 /**
  * Creates Dispatcher instance
  * @constructor
@@ -93,7 +89,6 @@ Dispatcher.prototype.canvasUpdate = function(appID, ctx, commands) {
         self.sendMessage(appID, {err: command[0] + 'is not a valid Canvas property.'});
       }
     });
-    debugger;
     canvas.updateTexture();
   }
 };
@@ -108,3 +103,5 @@ Dispatcher.prototype.closeApp = function(appID) {
   app.canvas.destroyScreen();
   delete this.runningApps[appID];
 };
+
+module.exports = Dispatcher;

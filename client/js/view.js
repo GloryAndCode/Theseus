@@ -1,3 +1,5 @@
+var THREE = require('./three.shim');
+
 // This class creates the entire display and manages the virtual screens
 var View = function() {
   // Make all the variables
@@ -257,3 +259,5 @@ View.prototype.addScreen = function(position, size, screenNumber) {
   // Return the canvas
   return newCanvas;
 };
+
+module.exports = View;

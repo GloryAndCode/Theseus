@@ -3,6 +3,8 @@
  * Backed by server itself
  */
 
+var m = require('mithril');
+
 /**
  * Initializer for Theseus
  * @constructor
@@ -42,3 +44,5 @@ FileSystem.prototype.writeFile = function (appID, fileName, data) {
     }
   });
 };
+
+module.exports = FileSystem;
