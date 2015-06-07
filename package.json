@@ -4,7 +4,11 @@
   "description": "Virtual Reality Operating Environment",
   "main": "index.js",
   "scripts": {
-    "test": "mocha spec/"
+    "test": "mocha spec/",
+    "build": "go build && browserify client/js/app.js -o client/js/bundle.js",
+    "launch": "./Theseus",
+    "test-go": "go test",
+    "prebuild": "npm run test && npm run test-go"
   },
   "repository": {
     "type": "git",
@@ -18,6 +22,8 @@
   "homepage": "https://github.com/GloryAndCode/Theseus",
   "dependencies": {
     "chai": "^3.0.0",
-    "mocha": "^2.2.5"
+    "mithril": "^0.2.0",
+    "mocha": "^2.2.5",
+    "three": "^0.71.0"
   }
 }
