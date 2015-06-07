@@ -25,5 +25,8 @@
     "mithril": "^0.2.0",
     "mocha": "^2.2.5",
     "three": "^0.71.0"
+  },
+  "devDependencies": {
+    "browserify": "^10.2.4"
   }
 }
