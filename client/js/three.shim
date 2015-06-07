@@ -1,0 +1,6 @@
+var THREE = require('three');
+window.THREE = THREE;
+require('../libs/threejs/DeviceOrientationControls.js');
+require('../libs/threejs/OrbitControls.js');
+require('../libs/threejs/StereoEffect.js');
+module.exports = window.THREE;
