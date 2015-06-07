@@ -42,6 +42,7 @@ const (
 var (
 	verifyKey, signKey []byte
 	userDB, fileDB     *mgo.Collection
+	session            *mgo.Session
 	fs                 http.Handler
 )
 
@@ -60,6 +61,16 @@ func init() {
 		log.Fatal("Error reading private key")
 		return
 	}
+
+	// set up DB
+	session, err = mgo.Dial("localhost")
+	if err != nil {
+		panic(err)
+	}
+	session.SetSafe(&mgo.Safe{})
+
+	userDB = session.DB("Theseus").C("users")
+	fileDB = session.DB("Theseus").C("files")
 }
 
 // just some html, too lazy for http.FileServer()
@@ -133,7 +144,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginHandler(w, r)
+	r.URL.Path = "/login"
 }
 
 // reads the form values, checks them and creates the token
@@ -250,12 +261,15 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		switch r.URL.Path {
+		case "/createUser":
+			createHandler(w, r)
+			if r.URL.Path == "/login" {
+				loginHandler(w, r)
+			}
 		case "/login":
 			loginHandler(w, r)
 		case "/":
 			landingHandler(w, r)
-		case "/createUser":
-			createHandler(w, r)
 		case "/authenticate":
 			loginHandler(w, r)
 		}
@@ -296,19 +310,10 @@ func (s ApiHandler) ServeHTTP(
 }
 
 func main() {
+	defer session.Close()
 	fs = http.FileServer(http.Dir("client"))
 
 	http.HandleFunc("/", routeHandler)
-
-	session, err := mgo.Dial("localhost")
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-	session.SetSafe(&mgo.Safe{})
-
-	userDB = session.DB("Theseus").C("users")
-	fileDB = session.DB("Theseus").C("files")
 
 	log.Println("Listening on port 8080...")
 	go http.ListenAndServeTLS(":8443", "/keys/cert.pem", "/keys/certprivate.pem", nil)
