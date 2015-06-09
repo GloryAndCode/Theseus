@@ -16,14 +16,6 @@ var (
 	client http.Client
 )
 
-// testing out how to write tests ;)
-func TestTest(t *testing.T) {
-	n := 1
-	if n != 1 {
-		t.Error("Expected 1, got", n)
-	}
-}
-
 func TestLandingHandler(t *testing.T) {
 	// test server
 	ts := httptest.NewServer(http.HandlerFunc(landingHandler))
@@ -189,5 +181,40 @@ func TestFileHandlers(t *testing.T) {
 
 	if !strings.Contains(string(body), ("myFileContents")) {
 		t.Error("expected response body to equal 'myFileContents', got ", string(body))
+	}
+}
+
+func TestStaticFile(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(routeHandler))
+	defer ts.Close()
+
+	//get client files with valid token
+	res, err := client.Get(ts.URL + "/client.html")
+	if err != nil {
+		t.Error(err)
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	if !strings.Contains(string(body), "<!DOCTYPE html>") {
+		t.Error("Expected response body to contain '<!DOCTYPE html>'")
+	}
+
+	//fail to get client files without valid token
+	res, err = http.Get(ts.URL + "/client.html")
+	if err != nil {
+		t.Error(err)
+	}
+
+	body, err = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	if strings.Contains(string(body), "<!DOCTYPE html>") {
+		t.Error("Expected response body to not contain '<!DOCTYPE html>'")
 	}
 }

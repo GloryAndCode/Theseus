@@ -71,6 +71,8 @@ func init() {
 
 	userDB = session.DB("Theseus").C("users")
 	fileDB = session.DB("Theseus").C("files")
+	fs = http.FileServer(http.Dir("client"))
+	http.HandleFunc("/", routeHandler)
 }
 
 // just some html, too lazy for http.FileServer()
@@ -311,9 +313,6 @@ func (s ApiHandler) ServeHTTP(
 
 func main() {
 	defer session.Close()
-	fs = http.FileServer(http.Dir("client"))
-
-	http.HandleFunc("/", routeHandler)
 
 	log.Println("Listening on port 8080...")
 	go http.ListenAndServeTLS(":8443", "/keys/cert.pem", "/keys/certprivate.pem", nil)
