@@ -16,48 +16,14 @@ var (
 	client http.Client
 )
 
-func TestLandingHandler(t *testing.T) {
-	// test server
-	ts := httptest.NewServer(http.HandlerFunc(landingHandler))
-	defer ts.Close()
-
-	res, err := http.Get(ts.URL)
-	if err != nil {
-		t.Error(err)
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		t.Error(err)
-	}
-	if !strings.Contains(string(body), "<form action=\"/authenticate\" method=\"POST\">") {
-		t.Error("Expected response body to contain '<form action=\"/authenticate\" method=\"POST\">'")
-	}
-}
-
 func TestCreateHandler(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(createHandler))
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL)
-	if err != nil {
-		t.Error(err)
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		t.Error(err)
-	}
-	if !strings.Contains(string(body), "<form action=\"/createUser\" method=\"POST\">") {
-		t.Error("Expected response body to contain '<form action=\"/createUser\" method=\"POST\">'")
-	}
-
 	userDB = session.DB("TheseusTest").C("testUsers")
 	userDB.DropCollection()
 
-	res, err = http.PostForm(ts.URL, url.Values{"user": {"user"}, "pass": {"password"}})
+	res, err := http.PostForm(ts.URL, url.Values{"user": {"user"}, "pass": {"password"}})
 	res.Body.Close()
 	if err != nil {
 		t.Error(err)
@@ -188,8 +154,8 @@ func TestStaticFile(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(routeHandler))
 	defer ts.Close()
 
-	//get client files with valid token
-	res, err := client.Get(ts.URL + "/client.html")
+	// get create page
+	res, err := http.Get(ts.URL + "/create.html")
 	if err != nil {
 		t.Error(err)
 	}
@@ -199,11 +165,26 @@ func TestStaticFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !strings.Contains(string(body), "<!DOCTYPE html>") {
-		t.Error("Expected response body to contain '<!DOCTYPE html>'")
+	if !strings.Contains(string(body), "<form action=\"/createUser\" method=\"POST\">") {
+		t.Error("Expected response body to contain '<form action=\"/createUser\" method=\"POST\">'")
 	}
 
-	//fail to get client files without valid token
+	//get client page with valid token
+	res, err = client.Get(ts.URL + "/client.html")
+	if err != nil {
+		t.Error(err)
+	}
+
+	body, err = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	if !strings.Contains(string(body), "<script src=\"js/bundle.js\"></script>") {
+		t.Error("Expected response body to contain '<script src=\"js/bundle.js\"></script>'")
+	}
+
+	//fail to get client page without valid token
 	res, err = http.Get(ts.URL + "/client.html")
 	if err != nil {
 		t.Error(err)
@@ -214,7 +195,7 @@ func TestStaticFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if strings.Contains(string(body), "<!DOCTYPE html>") {
-		t.Error("Expected response body to not contain '<!DOCTYPE html>'")
+	if strings.Contains(string(body), "<script src=\"js/bundle.js\"></script>") {
+		t.Error("Expected response body to not contain '<script src=\"js/bundle.js\"></script>'")
 	}
 }
