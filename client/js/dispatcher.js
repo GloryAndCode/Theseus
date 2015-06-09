@@ -23,6 +23,9 @@ Dispatcher.prototype.initApp = function(script) {
     canvas: this.view.generateScreen()
   };
 
+  // send width and height info to mockCanvas
+  this.runningApps[appID].worker.postMessage({"width": canvas.width, "height": canvas.height});
+
   var self = this;
 
   this.runningApps[appID].worker.onmessage = function(e) {
