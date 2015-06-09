@@ -1,13 +1,3 @@
-// TODO:
-// If authentication request, attempt authentication
-// Else
-// Reject non-authenticated requests
-// If user-preferences request, send user preferences
-// If user-preferences put, save user preferences
-// If file-hash request and if user-authorized, send file-hash
-// If file request and if user-authorized, send file
-// If file put and if user-authorized, save file
-
 package main
 
 import (
@@ -75,50 +65,12 @@ func init() {
 	http.HandleFunc("/", routeHandler)
 }
 
-// just some html, too lazy for http.FileServer()
 const (
 	tokenName = "AccessToken"
-
-	landingHtml = `<h2>Welcome to the JWT Test</h2>
-
-<a href="/restricted">fun area</a>
-
-<form action="/authenticate" method="POST">
-  <input type="text" name="user">
-  <input type="password" name="pass">
-  <input type="submit">
-</form>`
-
-	createUserHTML = `<h2>Welcome to the Test Sign up</h2>
-
-<a href="/restricted">fun area</a>
-
-<form action="/createUser" method="POST">
-  <input type="text" name="user">
-  <input type="password" name="pass">
-  <input type="submit">
-</form>`
-
-	successHtml    = `<h2>Token Set - have fun!</h2><p>Go <a href="/">Back...</a></p>`
-	restrictedHtml = `<h1>Welcome!!</h1><img src="https://httpcats.herokuapp.com/200" alt="" />`
 )
-
-// serves the form and restricted link
-func landingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, landingHtml)
-}
 
 // serves user creation page
 func createHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, createUserHTML)
-		return
-	}
-
 	username := r.FormValue("user")
 	pass := r.FormValue("pass")
 	user := User{}
@@ -151,13 +103,6 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 // reads the form values, checks them and creates the token
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	// make sure its post
-	if r.Method != "POST" {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "No POST", r.Method)
-		return
-	}
-
 	username := r.FormValue("user")
 	pass := r.FormValue("pass")
 
@@ -199,8 +144,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, successHtml)
+	http.Redirect(w, r, "client.html", http.StatusTemporaryRedirect)
 }
 
 func storeFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -247,19 +191,17 @@ func getFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func routeHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/login" && r.URL.Path != "/" && r.URL.Path != "/createUser" && r.URL.Path != "/authenticate" {
-		_, validToken := getAuth(r)
-		if validToken {
-			switch r.URL.Path {
-			case "/getFile":
-				getFileHandler(w, r)
-			case "/storeFile":
-				storeFileHandler(w, r)
-			default:
-				fs.ServeHTTP(w, r)
-			}
-		} else {
-			landingHandler(w, r)
+	_, validToken := getAuth(r)
+	if validToken {
+		switch r.URL.Path {
+		case "/getFile":
+			getFileHandler(w, r)
+		case "/storeFile":
+			storeFileHandler(w, r)
+		case "/":
+			http.Redirect(w, r, "client.html", http.StatusTemporaryRedirect)
+		default:
+			fs.ServeHTTP(w, r)
 		}
 	} else {
 		switch r.URL.Path {
@@ -270,10 +212,14 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		case "/login":
 			loginHandler(w, r)
-		case "/":
-			landingHandler(w, r)
 		case "/authenticate":
 			loginHandler(w, r)
+		case "/client.html":
+			http.Redirect(w, r, "login.html", http.StatusTemporaryRedirect)
+		case "/":
+			http.Redirect(w, r, "login.html", http.StatusTemporaryRedirect)
+		default:
+			fs.ServeHTTP(w, r)
 		}
 	}
 }
