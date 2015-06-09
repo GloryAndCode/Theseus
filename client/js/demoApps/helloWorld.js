@@ -11,7 +11,7 @@ var updateCounter = function() {
 };
 
 setTimeout(function() {
-  if (canvas !== undefined) console.log(canvas.width);
+  postMessage({command: 'canvasUpdate', args: ['2d', [
     ['fillStyle', 'white'],
     ['font', '30px Arial'],
   ]]});
