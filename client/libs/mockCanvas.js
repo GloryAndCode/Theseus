@@ -54,13 +54,13 @@ var notImplementedMethods = ['createImageData', 'createLinearGradient', 'createP
 for (var i = 0; i < methods.length; i++) {
   _2dContext[methods[i]] = (function(j) {
     return function() {
-      _queue.push(methods[j], Array.prototype.slice.call(arguments));
+      _queue.push([methods[j], Array.prototype.slice.call(arguments)]);
     };
   })(i);
 }
 
 for (var i = 0; i < notImplementedMethods.length; i++) {
-  _2dContext[methods[i]] = (function(j) {
+  _2dContext[notImplementedMethods[i]] = (function(j) {
     return function() {
       throw "method " + methods[j] + " is not implemented";
     };
