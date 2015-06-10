@@ -4,7 +4,7 @@
   "description": "Virtual Reality Operating Environment",
   "main": "index.js",
   "scripts": {
-    "test": "mocha spec/",
+    "test": "node_modules/.bin/mochify --phantomjs node_modules/.bin/phantomjs",
     "build": "go build && browserify client/js/app.js -o client/js/bundle.js",
     "launch": "./Theseus",
     "test-go": "go test",
@@ -28,7 +28,6 @@
     "chai": "^3.0.0",
     "chai-as-promised": "^5.1.0",
     "mocha": "^2.2.5",
-    "mocha-phantomjs": "^3.5.3",
     "phantomjs": "^1.9.17",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.8.0"
