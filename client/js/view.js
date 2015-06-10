@@ -351,47 +351,6 @@ View.prototype.emit = function(event) {
   }
 };
 
-View.prototype.focusNextScreen = function() {
-  if (this.focusScreen) {
-    if (this.focusScreen.screenNumber < 5) {
-      for (var i = this.focusScreen.screenNumber + 1; i < 6; i++) {
-        if (this.screensOn[i] !== false) {
-          // Focus this screen
-          return;
-        }
-      }
-    }
-    for (var j = 0; j < this.focusScreen.sceenNumber; j++) {
-      if (this.screensOn[j] !== false) {
-        // Focus this screen
-        return;
-      }
-    }
-  }
-};
-
-View.prototype.focusPrevScreen = function() {
-  if (this.focusScreen) {
-    if (this.focusScreen.screenNumber > 0) {
-      for (var i = this.focusScreen.screenNumber - 1; i > -1; i--) {
-        if (this.screensOn[i] !== false) {
-          this.focusScreen = this.screensOn[i];
-          console.log(this.focusScreen.screenNumber);
-          return;
-        }
-      }
-    }
-    for (var j = 5; j > this.focusScreen.sceenNumber; j--) {
-      if (this.screensOn[j] !== false) {
-        this.focusScreen = this.screensOn[j];
-        console.log(this.focusScreen.screenNumber);
-        return;
-      }
-    }
-    console.log(this.focusScreen.screenNumber);
-  }
-};
-
 View.prototype.prevScreen = function() {
   var keep = [];
   Object.keys(this.screensOn).forEach(function(key) {
