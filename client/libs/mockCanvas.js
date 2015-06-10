@@ -37,9 +37,11 @@ var properties = ['fillStyle', 'font', 'globalAlpha', 'globalCompositeOperation'
 for (var i = 0; i < properties.length; i++) {
   Object.defineProperty(_2dContext, properties[i], {
     "get": function() {throw "getter not implemented";},
-    "set": function(newValue) {
-      _queue.push([properties[i], newValue]);
-    }
+    "set": (function(j) {
+      return function(newValue) {
+        _queue.push([properties[j], newValue]);
+      }
+    })(i)
   });
 }
 

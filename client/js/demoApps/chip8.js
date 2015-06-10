@@ -1,3 +1,5 @@
+importScripts('../../libs/mockCanvas.js');
+
 var Keyboarder = function() {
   var keyState = {};
 
@@ -815,6 +817,8 @@ chip.loadProgram("BRIX");
 
 var tick = function() {
   chip.setKeyBuffer();
+  chip.run();
+  chip.run();
   chip.run();
   chip.run();
   chip.display.render(chip.screenBuffer);
