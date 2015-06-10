@@ -28,6 +28,7 @@
     "chai": "^3.0.0",
     "chai-as-promised": "^5.1.0",
     "mocha": "^2.2.5",
+    "mochify": "^2.9.0",
     "phantomjs": "^1.9.17",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.8.0"
