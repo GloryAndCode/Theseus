@@ -72,7 +72,7 @@ var postQueue = function() {
     postMessage({command: 'canvasUpdate', args: ['2d', _queue]});
     _queue = [];
   }
-  setTimeout(postQueue, 250);
+  setTimeout(postQueue, 100);
 };
 
 postQueue();
