@@ -4,7 +4,7 @@
   "description": "Virtual Reality Operating Environment",
   "main": "index.js",
   "scripts": {
-    "test": "mocha spec/",
+    "test": "node_modules/.bin/mochify --phantomjs node_modules/.bin/phantomjs",
     "build": "go build && browserify client/js/app.js -o client/js/bundle.js",
     "launch": "./Theseus",
     "test-go": "go test",
@@ -20,12 +20,17 @@
   },
   "homepage": "https://github.com/GloryAndCode/Theseus",
   "dependencies": {
-    "chai": "^3.0.0",
     "mithril": "^0.2.0",
-    "mocha": "^2.2.5",
     "three": "^0.71.0"
   },
   "devDependencies": {
-    "browserify": "^10.2.4"
+    "browserify": "^10.2.4",
+    "chai": "^3.0.0",
+    "chai-as-promised": "^5.1.0",
+    "mocha": "^2.2.5",
+    "mochify": "^2.9.0",
+    "phantomjs": "^1.9.17",
+    "sinon": "^1.14.1",
+    "sinon-chai": "^2.8.0"
   }
 }

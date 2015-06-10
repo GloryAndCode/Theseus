@@ -39,7 +39,7 @@ FileSystem.prototype.writeFile = function (appID, fileName, data) {
     url: "/storeFile",
     background: true,
     data: {
-      filename: fileName,
+      fileName: fileName,
       fileContents: data
     }
   });

@@ -4,9 +4,8 @@ services: mongodb
 
 before_script:
   - go get
-  - npm install -g mocha
-  - npm install chai
+  - npm install
 
 script:
   - go test
-  - mocha spec/
+  - npm run test
