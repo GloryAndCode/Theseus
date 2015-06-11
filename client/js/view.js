@@ -98,7 +98,7 @@ View.prototype.init = function() {
   });
 
   // Generate the floor's geometry, make a mesh and add it to the scene
-  var floorGeo = new THREE.PlaneGeometry(1000,1000);
+  var floorGeo = new THREE.PlaneBufferGeometry(1000,1000);
   this.floor = new THREE.Mesh(floorGeo, floorMat);
   this.floor.rotation.x = -Math.PI / 2;
   this.scene.add(this.floor);
@@ -117,7 +117,7 @@ View.prototype.init = function() {
   });
 
   // Make the actual box
-  var skyGeo = new THREE.CubeGeometry(750,750,750);
+  var skyGeo = new THREE.BoxGeometry(750,750,750);
   var skyMaterial = new THREE.MeshFaceMaterial(skyMats);
 
   // Build the skybox mesh and add it to the scene
@@ -277,7 +277,7 @@ View.prototype.addScreen = function(position, size, screenNumber) {
   var screenTexture = new THREE.Texture(newCanvas);
 
   // Generate a Plane and add the canvas to it
-  var screenGeo = new THREE.PlaneGeometry(size.width,size.height);
+  var screenGeo = new THREE.PlaneBufferGeometry(size.width,size.height);
   var screenMat = new THREE.MeshBasicMaterial({
     map: screenTexture,
     side: THREE.DoubleSide
@@ -415,7 +415,7 @@ View.prototype.addHighlight = function(position, size) {
   var screenTexture = new THREE.Texture(newCanvas);
 
   // Generate a Plane and add the canvas to it
-  var screenGeo = new THREE.PlaneGeometry(size.width,size.height);
+  var screenGeo = new THREE.PlaneBufferGeometry(size.width,size.height);
   var screenMat = new THREE.MeshBasicMaterial({
     map: screenTexture,
     side: THREE.DoubleSide
