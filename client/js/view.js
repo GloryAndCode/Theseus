@@ -48,11 +48,19 @@ View.prototype.init = function() {
   this.container = document.getElementById('example');
   this.container.appendChild(this.element);
 
+  this.orientationBinding = this.setOrientationControls.bind(this);
+
   // Make the 3d work
-  this.effect = new THREE.StereoEffect(this.renderer);
+  if (window.DeviceOrientationEvent !== undefined) {
+    this.effect = new THREE.StereoEffect(this.renderer);
+    window.addEventListener('deviceorientation',
+                          this.orientationBinding,
+                          true);
+  };
 
   // Add a scene and a camera
   this.scene = new THREE.Scene();
+
   this.camera = new THREE.PerspectiveCamera(90,1,0.001,700);
   this.camera.position.set(0,10,0);
   this.scene.add(this.camera);
@@ -67,11 +75,6 @@ View.prototype.init = function() {
   );
   this.controls.noZoom = true;
   this.controls.noPan = true;
-
-  // Manage device orientation
-  window.addEventListener('deviceorientation',
-                          this.setOrientationControls,
-                          true);
 
   // Add some light to the scene
   this.light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
@@ -159,9 +162,9 @@ View.prototype.setOrientationControls = function(e) {
   this.controls.connect();
   this.controls.update();
 
-  this.element.addEventListener('click', this.fullscreen, false);
+  this.element.addEventListener('click', this.fullscreen.bind(this), false);
   window.removeEventListener('deviceorientation',
-                             this.setOrientationControls,
+                             this.orientationBinding,
                              true);
 };
 
@@ -175,7 +178,7 @@ View.prototype.resize = function() {
     this.camera.updateProjectionMatrix();
     // Update the renderer
     this.renderer.setSize(width, height);
-    this.effect.setSize(width, height);
+    this.effect ? this.effect.setSize(width, height) : null;
   }
 };
 
@@ -188,7 +191,9 @@ View.prototype.update = function(dt) {
 
 // Rendering method
 View.prototype.render = function(dt) {
-  this.effect.render(this.scene, this.camera);
+  this.effect ?
+  this.effect.render(this.scene, this.camera) :
+  this.renderer.render(this.scene, this.camera);
 };
 
 // Animate everything and run the render loop
@@ -209,13 +214,13 @@ View.prototype.animate = function(t) {
 // Method for requesting fullscreen depending on the browser
 View.prototype.fullscreen = function() {
   if (this.container.requestFullscreen) {
-  	this.container.requestFullscreen();
+    this.container.requestFullscreen();
   } else if (this.container.msRequestFullscreen) {
-  	this.container.msRequestFullscreen();
+    this.container.msRequestFullscreen();
   } else if (this.container.mozRequestFullScreen) {
-  	this.container.mozRequestFullScreen();
+    this.container.mozRequestFullScreen();
   } else if (this.container.webkitRequestFullscreen) {
-  	this.container.webkitRequestFullscreen();
+    this.container.webkitRequestFullscreen();
   }
 };
 
@@ -282,8 +287,8 @@ View.prototype.addScreen = function(position, size, screenNumber) {
     side: THREE.DoubleSide
   });
   var newScreen = new THREE.Mesh(
-  	screenGeo,
-  	screenMat
+    screenGeo,
+    screenMat
   );
   newScreen.screenNumber = screenNumber;
 
@@ -439,3 +444,4 @@ View.prototype.addHighlight = function(position, size) {
 };
 
 module.exports = View;
+
