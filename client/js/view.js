@@ -158,13 +158,10 @@ View.prototype.setOrientationControls = function(e) {
     return;
   }
 
-  // console.log('' + e.alpha + ' ' + e.beta + ' ' + e.gamma);
-
   this.controls = new THREE.DeviceOrientationControls(this.camera, true);
   this.controls.connect();
   this.controls.update();
 
-  debugger;
   this.element.addEventListener('click', this.fullscreen.bind(this), false);
   window.removeEventListener('deviceorientation',
                              this.orientationBinding,
