@@ -22,9 +22,13 @@ Dispatcher.prototype.initApp = function(script) {
     worker: new Worker(script),
     canvas: this.view.generateScreen()
   };
+  var app = this.runningApps[appID];
 
-  // send width and height info to mockCanvas
-  this.runningApps[appID].worker.postMessage({"width": this.runningApps[appID].canvas.width, "height": this.runningApps[appID].canvas.height});
+  // send width and height info to mockCanvas and bind incoming keyboard events
+  app.worker.postMessage({"width": app.canvas.width, "height": app.canvas.height});
+  app.canvas.on(function(event){
+    app.worker.postMessage(event);
+  });
 
   var self = this;
 
