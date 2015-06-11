@@ -239,7 +239,7 @@ View.prototype.getNewFocus = function() {
 
 // Method for creating a new virtual screen
 View.prototype.generateScreen = function() {
-  positions = [{x : 9.5, y : 7.5, z : 0, ry : 1.5 * Math.PI, rx : 0},
+  var positions = [{x : 9.5, y : 7.5, z : 0, ry : 1.5 * Math.PI, rx : 0},
                {x : 5, y : 7.5, z : 10.5, ry : 1.25 * Math.PI, rx : 0},
                {x : 5, y : 7.5, z : -10.5, ry : 0.75 * Math.PI, rx : 0},
                {x : 9.5, y : 17, z : 0, ry : 1.5 * Math.PI, rx : 0.25 * Math.PI},
