@@ -32,7 +32,6 @@ View.prototype.init = function() {
     68 : view.nextScreen,
     83 : view.generateScreen,
     88 : function() {
-      console.log("deleting screen");
       if(view.focusScreen) {
         view.focusScreen.destroyScreen();
       }
@@ -249,7 +248,6 @@ View.prototype.generateScreen = function() {
   var size = {width : 12,height : 9};
   var screenNumber = this.getNextScreen();
   if (screenNumber === null) {
-    console.log("Already 6 screens");
     return null;
   }
   return this.addScreen(positions[screenNumber], size, screenNumber);
