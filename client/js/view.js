@@ -9,6 +9,8 @@ var View = function() {
 };
 
 View.prototype.init = function() {
+  var view = this;
+
   // Set the clock
   this.clock = new THREE.Clock();
 
@@ -18,6 +20,23 @@ View.prototype.init = function() {
   // Store the current screens
   this.screensOn = {0 : false, 1 : false, 2 : false,
                   3 : false, 4 : false, 5 : false};
+
+  // keep track of the focus screen
+  this.focusScreen = undefined;
+  this.keysDown = {};
+  this.keepDefault = {
+    123 : true  // Exception to keep F12 working
+  };
+  this.controlKeys = {
+    65 : view.prevScreen,
+    68 : view.nextScreen,
+    83 : view.generateScreen,
+    88 : function() {
+      if(view.focusScreen) {
+        view.focusScreen.destroyScreen();
+      }
+    }
+  };
 
   // Create the renderer
   this.renderer = new THREE.WebGLRenderer();
@@ -78,7 +97,7 @@ View.prototype.init = function() {
   });
 
   // Generate the floor's geometry, make a mesh and add it to the scene
-  var floorGeo = new THREE.PlaneGeometry(1000,1000);
+  var floorGeo = new THREE.PlaneBufferGeometry(1000,1000);
   this.floor = new THREE.Mesh(floorGeo, floorMat);
   this.floor.rotation.x = -Math.PI / 2;
   this.scene.add(this.floor);
@@ -97,15 +116,36 @@ View.prototype.init = function() {
   });
 
   // Make the actual box
-  var skyGeo = new THREE.CubeGeometry(750,750,750);
+  var skyGeo = new THREE.BoxGeometry(750,750,750);
   var skyMaterial = new THREE.MeshFaceMaterial(skyMats);
 
   // Build the skybox mesh and add it to the scene
   var skyboxMesh = new THREE.Mesh(skyGeo, skyMaterial);
   this.scene.add(skyboxMesh);
 
-  // Listen for resizes
+  // Listen for events
   window.addEventListener('resize', this.resize, false);
+  document.onkeydown = function(e){
+    if (this.keepDefault[e.which] === true) {
+      return;
+    }
+    e.preventDefault();
+    if (!this.keysDown[e.which]) {
+      if (Object.keys(this.controlKeys).indexOf(String(e.which)) > -1  && this.keysDown[17] === true) {
+        this.controlKeys[e.which].apply(this);
+      } else {
+        this.emit({key : e.which, event : 'keyDown'});
+      }
+      this.keysDown[e.which] = true;
+    }
+  }.bind(this);
+  document.onkeyup = function(e){
+    e.preventDefault();
+    if (this.keysDown[e.which]) {
+      this.emit({key : e.which, event : 'keyUp'});
+      this.keysDown[e.which] = false;
+    }
+  }.bind(this);
   setTimeout(this.resize, 1);
 };
 
@@ -128,14 +168,15 @@ View.prototype.setOrientationControls = function(e) {
 // Method to call when the screen is resized
 View.prototype.resize = function() {
   // Get the Width and Height from the container and calculate the aspect
-  var width = this.container.offsetWidth;
-  var height = this.container.offsetHeight;
-  this.camera.aspect = width / height;
-  this.camera.updateProjectionMatrix();
-
-  // Update the renderer
-  this.renderer.setSize(width, height);
-  this.effect.setSize(width, height);
+  if (this.container) {
+    var width = this.container.offsetWidth;
+    var height = this.container.offsetHeight;
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    // Update the renderer
+    this.renderer.setSize(width, height);
+    this.effect.setSize(width, height);
+  }
 };
 
 // Wrapping method for resizing, updating controls and camera
@@ -187,9 +228,18 @@ View.prototype.getNextScreen = function() {
   return null;
 };
 
+View.prototype.getNewFocus = function() {
+  for (var i = 0; i < 6; i++) {
+    if (this.screensOn[i] !== false) {
+      return this.screensOn[i];
+    }
+  }
+  return undefined;
+};
+
 // Method for creating a new virtual screen
 View.prototype.generateScreen = function() {
-  positions = [{x : 9.5, y : 7.5, z : 0, ry : 1.5 * Math.PI, rx : 0},
+  var positions = [{x : 9.5, y : 7.5, z : 0, ry : 1.5 * Math.PI, rx : 0},
                {x : 5, y : 7.5, z : 10.5, ry : 1.25 * Math.PI, rx : 0},
                {x : 5, y : 7.5, z : -10.5, ry : 0.75 * Math.PI, rx : 0},
                {x : 9.5, y : 17, z : 0, ry : 1.5 * Math.PI, rx : 0.25 * Math.PI},
@@ -198,19 +248,35 @@ View.prototype.generateScreen = function() {
   var size = {width : 12,height : 9};
   var screenNumber = this.getNextScreen();
   if (screenNumber === null) {
-    console.log("Already 6 screens");
     return null;
   }
   return this.addScreen(positions[screenNumber], size, screenNumber);
+};
+
+View.prototype.highlightScreen = function(screenNumber) {
+  var positions = [{x : 9.7, y : 7.5, z : 0, ry : 1.5 * Math.PI, rx : 0},
+               {x : 5.2, y : 7.5, z : 10.5, ry : 1.25 * Math.PI, rx : 0},
+               {x : 5.2, y : 7.5, z : -10.5, ry : 0.75 * Math.PI, rx : 0},
+               {x : 9.7, y : 17, z : 0, ry : 1.5 * Math.PI, rx : 0.25 * Math.PI},
+               {x : 5.2, y : 17, z : 10.5, ry : 1.25 * Math.PI, rx : 0.25 * Math.PI},
+               {x : 5.2, y : 17, z : -10.5, ry : 0.75 * Math.PI, rx : 0.25 * Math.PI}];
+
+  var size = {width : 13,height : 10.3};
+  if (this.highlight) {
+    this.scene.remove(this.highlight);
+    this.highlight = undefined;
+  }
+  this.addHighlight(positions[screenNumber], size);
 };
 
 View.prototype.addScreen = function(position, size, screenNumber) {
   // Make a new canvas to generate the screen from
   var newCanvas = document.createElement('canvas');
   var screenTexture = new THREE.Texture(newCanvas);
+  screenTexture.minFilter = THREE.NearestFilter;
 
   // Generate a Plane and add the canvas to it
-  var screenGeo = new THREE.PlaneGeometry(size.width,size.height);
+  var screenGeo = new THREE.PlaneBufferGeometry(size.width,size.height);
   var screenMat = new THREE.MeshBasicMaterial({
     map: screenTexture,
     side: THREE.DoubleSide
@@ -219,19 +285,18 @@ View.prototype.addScreen = function(position, size, screenNumber) {
   	screenGeo,
   	screenMat
   );
+  newScreen.screenNumber = screenNumber;
 
   // Position the new canvas and add it to the scene
   newScreen.position.setX(position.x);
   newScreen.position.setY(position.y);
   newScreen.position.setZ(position.z);
+  newScreen.rotation.y = position.ry;
+
   this.scene.add(newScreen);
 
-  // //Add a bit of rotation for now
-  // this.animations.push(function() {
-  // 	newScreen.rotation.z += 0.01;
-  // });
-  //newScreen.rotation.x = position.rx;
-  newScreen.rotation.y = position.ry;
+  // Now add the highlight
+  this.highlightScreen(screenNumber);
 
   // Add the screen, texture, and scene object as a param on the canvas
   newCanvas.texture = screenTexture;
@@ -242,22 +307,135 @@ View.prototype.addScreen = function(position, size, screenNumber) {
   newCanvas.contexts['2d'] = newCanvas.getContext('2d');
   newCanvas.contexts['3d'] = newCanvas.getContext('3d');
   newCanvas.screenNumber = screenNumber;
-  this.screensOn[screenNumber] = true;
+  this.screensOn[screenNumber] = newCanvas;
+  this.focusScreen = newCanvas;
+  var view = this;
+  newCanvas.eventCallbacks = [];
 
   // Make a function to update the texture when the
   // canvas is changed.
   newCanvas.updateTexture = function() {
     this.texture.needsUpdate = true;
   };
+  newCanvas.on = function(callback) {
+    if (typeof callback === "function") {
+      newCanvas.eventCallbacks.push(callback);
+    }
+  };
 
   // Make a function to remove the screen from the scene
   newCanvas.destroyScreen = function() {
-    this.scene.remove(this.screen);
     this.screensOn[screenNumber] = false;
+    if (view.focusScreen === this) {
+      view.focusScreen = view.getNewFocus();
+      if (view.focusScreen) {
+        view.highlightScreen(view.focusScreen.screenNumber);
+      } else {
+        view.scene.remove(view.highlight);
+        view.highlight = 0;
+      }
+    }
+    this.scene.remove(this.screen);
   };
 
   // Return the canvas
   return newCanvas;
+};
+
+View.prototype.emit = function(event) {
+  if (this.focusScreen !== undefined) {
+    this.focusScreen.eventCallbacks.forEach(function(callback){
+      callback(event);
+    });
+  }
+};
+
+View.prototype.prevScreen = function() {
+  var keep = [];
+  Object.keys(this.screensOn).forEach(function(key) {
+    if (this.screensOn[key] !== false) {
+      keep.push(key);
+    }
+  }.bind(this));
+
+  if (keep.length < 2) {
+    if (this.focusScreen) {
+      console.log(this.focusScreen.screenNumber);
+    }
+    return;
+
+  }
+  var current = this.focusScreen.screenNumber;
+  if (current === keep[0]) {
+    // Make top screen
+    this.focusScreen = this.screensOn[keep[keep.length - 1]];
+    this.highlightScreen(this.focusScreen.screenNumber);
+    return;
+  }
+  //go to the previous screen
+  this.focusScreen = this.screensOn[keep[keep.indexOf(current) - 1]];
+  this.highlightScreen(this.focusScreen.screenNumber);
+  return;
+};
+
+
+View.prototype.nextScreen = function() {
+  var keep = [];
+  Object.keys(this.screensOn).forEach(function(key) {
+    if (this.screensOn[key] !== false) {
+      keep.push(key);
+    }
+  }.bind(this));
+
+  if (keep.length < 2) {
+    if (this.focusScreen) {
+      console.log(this.focusScreen.screenNumber);
+    }
+    return;
+
+  }
+  var current = this.focusScreen.screenNumber;
+  if (current === keep[keep.length  - 1]) {
+    // Make bottom screen
+    this.focusScreen = this.screensOn[keep[0]];
+    this.highlightScreen(this.focusScreen.screenNumber);
+    return;
+  }
+  //go to the previous screen
+  this.focusScreen = this.screensOn[keep[keep.indexOf(current) + 1]];
+  this.highlightScreen(this.focusScreen.screenNumber);
+  return;
+};
+
+View.prototype.addHighlight = function(position, size) {
+  var newCanvas = document.createElement('canvas');
+  newCanvas.getContext("2d").fillStyle = "#CCFF66";
+  newCanvas.getContext("2d").fillRect(0,0,500,500);
+  var screenTexture = new THREE.Texture(newCanvas);
+  screenTexture.minFilter = THREE.NearestFilter;
+
+  // Generate a Plane and add the canvas to it
+  var screenGeo = new THREE.PlaneBufferGeometry(size.width,size.height);
+  var screenMat = new THREE.MeshBasicMaterial({
+    map: screenTexture,
+    side: THREE.DoubleSide
+  });
+  var newScreen = new THREE.Mesh(
+    screenGeo,
+    screenMat
+  );
+
+  screenTexture.needsUpdate = true;
+
+  // Set postition and add to scene
+  newScreen.position.setX(position.x);
+  newScreen.position.setY(position.y);
+  newScreen.position.setZ(position.z);
+  newScreen.rotation.y = position.ry;
+
+  this.highlight = newScreen;
+
+  this.scene.add(newScreen);
 };
 
 module.exports = View;
