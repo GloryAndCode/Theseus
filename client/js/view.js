@@ -159,7 +159,7 @@ View.prototype.setOrientationControls = function(e) {
     return;
   }
 
-  console.log('' + e.alpha + ' ' + e.beta + ' ' + e.gamma);
+  // console.log('' + e.alpha + ' ' + e.beta + ' ' + e.gamma);
 
   this.controls = new THREE.DeviceOrientationControls(this.camera, true);
   this.controls.connect();
