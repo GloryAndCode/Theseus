@@ -275,6 +275,7 @@ View.prototype.addScreen = function(position, size, screenNumber) {
   // Make a new canvas to generate the screen from
   var newCanvas = document.createElement('canvas');
   var screenTexture = new THREE.Texture(newCanvas);
+  screenTexture.minFilter = THREE.NearestFilter;
 
   // Generate a Plane and add the canvas to it
   var screenGeo = new THREE.PlaneBufferGeometry(size.width,size.height);
@@ -413,6 +414,7 @@ View.prototype.addHighlight = function(position, size) {
   newCanvas.getContext("2d").fillStyle = "#CCFF66";
   newCanvas.getContext("2d").fillRect(0,0,500,500);
   var screenTexture = new THREE.Texture(newCanvas);
+  screenTexture.minFilter = THREE.NearestFilter;
 
   // Generate a Plane and add the canvas to it
   var screenGeo = new THREE.PlaneBufferGeometry(size.width,size.height);
