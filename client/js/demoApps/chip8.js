@@ -8,11 +8,11 @@ var Keyboarder = function() {
   };
 
   onmessage = function(e) {
-    if (e.data.keyCode !== undefined) {
+    if (e.data.key !== undefined) {
       if (e.data.event === "keyUp") {
-        keyState[e.keyCode] = false;
+        keyState[e.data.key] = false;
       } else {
-        keyState[e.keyCode] = true;
+        keyState[e.data.key] = true;
       }
     }
   };
@@ -816,13 +816,13 @@ chip.loadFonts();
 chip.loadProgram("BRIX"); 
 
 var tick = function() {
+  setTimeout(tick, 10);
   chip.setKeyBuffer();
   chip.run();
   chip.run();
   chip.run();
   chip.run();
   chip.display.render(chip.screenBuffer);
-  setTimeout(tick, 17);
 };
 
 tick();
