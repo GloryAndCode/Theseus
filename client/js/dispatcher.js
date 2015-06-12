@@ -90,7 +90,7 @@ Dispatcher.prototype.canvasUpdate = function(appID, ctx, commands) {
     commands.forEach(function(command) {
       if (typeof context[command[0]] === 'function') {
        context[command[0]].apply(context, command[1]);
-      } else if (context.hasOwnProperty(command[0])) {
+      } else if (context[command[0]] !== undefined) {
         context[command[0]] = command[1];
       } else {
         self.sendMessage(appID, {err: command[0] + 'is not a valid Canvas property.'});
