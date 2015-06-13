@@ -261,6 +261,6 @@ func main() {
 	defer session.Close()
 
 	log.Println("Listening on port 8080...")
-	go http.ListenAndServeTLS(":8443", "/keys/cert.pem", "/keys/certprivate.pem", nil)
+	go http.ListenAndServeTLS(":8443", "keys/cert.pem", "keys/certprivate.pem", nil)
 	http.ListenAndServe(":8080", nil)
 }
