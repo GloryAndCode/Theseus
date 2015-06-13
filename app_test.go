@@ -1,6 +1,7 @@
 package main
 
 import (
+	jwt "github.com/dgrijalva/jwt-go"
 	bcrypt "golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
@@ -58,7 +59,11 @@ func TestCreateHandler(t *testing.T) {
 }
 
 func TestGetAuth(t *testing.T) {
-	cookie := "AccessToken=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0MzQyMjM3NTIsInVzZXJuYW1lIjoidGVzdDIifQ.GMp3cEWf1SWy-_uDh0CrOO1KIj94FyUZvNOU8pPL23FFZeRUs1IQ_XLVTMr87y7Or9jsL2qTee5bdYySqQ76Jg"
+	token := jwt.New(jwt.GetSigningMethod("RS256"))
+	token.Claims["username"] = "usernameisrequired"
+	cookie, _ := token.SignedString(signKey)
+	cookie = "AccessToken=" + cookie
+
 	r := http.Request{}
 	r.Header = make(map[string][]string)
 	r.Header["Cookie"] = []string{cookie}
